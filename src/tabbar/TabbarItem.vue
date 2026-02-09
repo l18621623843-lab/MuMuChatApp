@@ -28,10 +28,14 @@ function getImageByIndex(index: number, item: CustomTabBarItem) {
       <!-- <wd-icon :name="item.icon" size="20" /> -->
     </template>
     <template v-if="item.iconType === 'unocss' || item.iconType === 'iconfont'">
-      <view :class="[item.icon, isBulge ? 'text-44px' : 'text-21px']" class="transition-all" />
+      <view class="glass-tabbar-icon-wrapper" :class="{ 'active': tabbarStore.curIdx === index }">
+        <view :class="[item.icon, isBulge ? 'text-44px' : 'text-22px']" class="transition-all relative z-1" />
+      </view>
     </template>
     <template v-if="item.iconType === 'image'">
-      <image :src="getImageByIndex(index, item)" mode="scaleToFill" :class="isBulge ? 'h-44px w-44px rounded-10px' : 'h-24px w-24px rounded-6px'" />
+      <view class="glass-tabbar-icon-wrapper" :class="{ 'active': tabbarStore.curIdx === index }">
+        <image :src="getImageByIndex(index, item)" mode="scaleToFill" :class="isBulge ? 'h-44px w-44px rounded-10px' : 'h-26px w-26px rounded-7px'" />
+      </view>
     </template>
     <view v-if="!isBulge" class="mt-4px text-10px font-500 transition-all">
       {{ getI18nText(item.text) }}

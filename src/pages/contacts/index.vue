@@ -12,6 +12,8 @@ const refresherTriggered = ref(false)
 const scrollTop = ref(0)
 const isIndexBarTouching = ref(false)
 const isRefreshing = ref(false)
+const isTouching = ref(false)
+const touchStartY = ref(0)
 
 const quickList = [
   { id: 1, title: '新的朋友', color: '#ffb74d', icon: '新' },
@@ -72,18 +74,26 @@ function tapIndex(letter: string) {
 }
 
 function onRefresherRefresh() {
-  // 防止快速滑动时的冲突
-  if (scrollTop.value > 5) {
+  // 严格检查：只有在顶部且没有正在刷新时才触发
+  if (scrollTop.value > 0) {
     refresherTriggered.value = false
     return
   }
+
   // 防止在索引栏操作时触发刷新
   if (isIndexBarTouching.value) {
     refresherTriggered.value = false
     return
   }
+
   // 防止重复触发
-  if (isRefreshing.value) {
+  if (isRefreshing.value || refresherTriggered.value) {
+    return
+  }
+
+  // 必须是从顶部开始的下拉操作
+  if (!isTouching.value) {
+    refresherTriggered.value = false
     return
   }
 
@@ -93,7 +103,9 @@ function onRefresherRefresh() {
   // 模拟刷新数据
   setTimeout(() => {
     refresherTriggered.value = false
-    isRefreshing.value = false
+    setTimeout(() => {
+      isRefreshing.value = false
+    }, 300)
     uni.showToast({
       title: '刷新成功',
       icon: 'none',
@@ -101,9 +113,32 @@ function onRefresherRefresh() {
     })
   }, 1200)
 }
+
 function onScroll(e: any) {
   const newScrollTop = e.detail?.scrollTop || 0
   scrollTop.value = newScrollTop
+
+  // 一旦开始滚动，立即禁止刷新
+  if (newScrollTop > 0) {
+    isTouching.value = false
+    if (!isRefreshing.value) {
+      refresherTriggered.value = false
+    }
+  }
+}
+
+function onTouchStart(e: any) {
+  // 只有在完全顶部且不在操作索引栏时才允许触发刷新
+  if (scrollTop.value === 0 && !isIndexBarTouching.value && !isRefreshing.value) {
+    touchStartY.value = e.touches[0].pageY
+    isTouching.value = true
+  }
+}
+
+function onTouchEnd() {
+  setTimeout(() => {
+    isTouching.value = false
+  }, 100)
 }
 </script>
 
@@ -112,23 +147,44 @@ function onScroll(e: any) {
     <view class="glass-panel fixed left-0 right-0 top-0 z-1000 pt-safe">
       <view class="h-44px flex items-center justify-between px-4">
         <text class="text-17px text-#1f2d3d font-600">通讯录</text>
-        <view class="flex items-center gap-3 text-#1f2d3d">
-          <text class="text-18px active:scale-95 transition-transform">🔍</text>
-          <text class="text-18px active:scale-95 transition-transform">＋</text>
+        <view class="flex items-center gap-3">
+          <view class="glass-icon-btn h-32px w-32px flex items-center justify-center rounded-10px active:scale-95 transition-all">
+            <text class="text-16px">🔍</text>
+          </view>
+          <view class="glass-icon-btn h-32px w-32px flex items-center justify-center rounded-10px active:scale-95 transition-all">
+            <text class="text-16px">＋</text>
+          </view>
         </view>
       </view>
     </view>
-    <scroll-view class="no-bounce relative flex-1 pb-70px" :style="{ paddingTop: `${headerPadTop}px` }" scroll-y :scroll-into-view="scrollIntoView" refresher-enabled :refresher-triggered="refresherTriggered" refresher-background="#eaf4ff" refresher-default-style="none" :refresher-threshold="70" @refresherrefresh="onRefresherRefresh" @scroll="onScroll">
-      <view v-show="refresherTriggered" class="flex items-center justify-center py-4">
-        <view class="glass-loading flex items-center gap-3 rounded-full px-5 py-2.5 text-13px text-#5a7a9a">
-          <view class="flex items-center gap-1.5">
-            <view class="h-7px w-7px rounded-full bg-#4ea3ff animate-bounce" />
-            <view class="h-7px w-7px rounded-full bg-#6db4ff animate-bounce [animation-delay:150ms]" />
-            <view class="h-7px w-7px rounded-full bg-#8bc5ff animate-bounce [animation-delay:300ms]" />
-          </view>
-          <text class="font-500">正在刷新...</text>
+
+    <!-- 加载动画 - 独立放置，避免被遮挡 -->
+    <view v-show="refresherTriggered" class="fixed left-0 right-0 z-999 flex items-center justify-center" :style="{ top: `${headerPadTop + 8}px` }">
+      <view class="glass-loading flex items-center gap-3 rounded-full px-5 py-3 text-13px text-#5a7a9a shadow-lg">
+        <view class="relative h-22px w-22px">
+          <view class="absolute inset-0 rounded-full" style="border: 2.5px solid rgba(213, 229, 255, 0.4);" />
+          <view class="absolute inset-0 animate-spin rounded-full" style="border: 2.5px solid #4ea3ff; border-top-color: transparent; animation-duration: 0.7s;" />
+          <view class="absolute inset-1 rounded-full bg-gradient-to-br from-#4ea3ff/10 to-transparent" />
         </view>
+        <text class="font-500">正在刷新...</text>
       </view>
+    </view>
+
+    <scroll-view
+      class="no-bounce relative flex-1 pb-70px"
+      :style="{ paddingTop: `${headerPadTop}px` }"
+      scroll-y
+      :scroll-into-view="scrollIntoView"
+      refresher-enabled
+      :refresher-triggered="refresherTriggered"
+      refresher-background="transparent"
+      refresher-default-style="none"
+      :refresher-threshold="80"
+      @refresherrefresh="onRefresherRefresh"
+      @scroll="onScroll"
+      @touchstart="onTouchStart"
+      @touchend="onTouchEnd"
+    >
       <view id="top" class="glass-card mx-3 rounded-17px overflow-hidden">
         <view
           v-for="item in quickList"
@@ -136,7 +192,7 @@ function onScroll(e: any) {
           class="flex items-center gap-3 px-4 py-3 active:bg-#f0f6ff/50 transition-colors"
           @click="tapQuick(item)"
         >
-          <view class="h-42px w-42px flex items-center justify-center rounded-13px text-15px text-white shadow-sm" :style="{ backgroundColor: item.color }">
+          <view class="glass-menu-icon h-44px w-44px flex items-center justify-center rounded-14px text-16px text-white font-600 shadow-md" :style="{ backgroundColor: item.color }">
             {{ item.icon }}
           </view>
           <text class="text-14px text-#1f2d3d">{{ item.title }}</text>
@@ -148,7 +204,7 @@ function onScroll(e: any) {
           我的企业及企业联系人
         </view>
         <view v-for="item in enterpriseList" :key="item.id" class="flex items-center gap-3 px-4 py-3 active:bg-#f0f6ff/50 transition-colors" @click="tapEnterprise(item)">
-          <view class="h-42px w-42px flex items-center justify-center rounded-13px text-15px text-white shadow-sm" :style="{ backgroundColor: item.color }">
+          <view class="glass-menu-icon h-44px w-44px flex items-center justify-center rounded-14px text-16px text-white font-600 shadow-md" :style="{ backgroundColor: item.color }">
             {{ item.icon }}
           </view>
           <text class="text-14px text-#1f2d3d">{{ item.title }}</text>
@@ -169,7 +225,9 @@ function onScroll(e: any) {
             class="flex items-center gap-3 px-4 py-3 active:bg-#f0f6ff/50 transition-colors"
             @click="tapContact(item)"
           >
-            <image :src="item.avatar" class="h-42px w-42px rounded-13px" />
+            <view class="glass-avatar-wrapper">
+              <image :src="item.avatar" class="h-44px w-44px rounded-13px" />
+            </view>
             <text class="text-14px text-#1f2d3d">{{ item.name }}</text>
           </view>
         </view>
@@ -177,8 +235,8 @@ function onScroll(e: any) {
 
     </scroll-view>
     <view class="fixed right-2 z-1000" :style="{ top: `${headerPadTop + 10}px` }" @touchstart.stop="isIndexBarTouching = true" @touchend.stop="isIndexBarTouching = false" @touchcancel.stop="isIndexBarTouching = false" @touchmove.stop>
-      <view class="glass-panel flex flex-col items-center gap-0.5 rounded-13px px-2 py-2 text-10px text-#7a8391">
-        <text v-for="letter in indexLetters" :key="letter" class="py-0.5 active:text-#4ea3ff active:scale-110 transition-all" @click="tapIndex(letter)">
+      <view class="glass-index-bar flex flex-col items-center gap-0.5 rounded-14px px-2 py-2.5 text-10px text-#7a8391">
+        <text v-for="letter in indexLetters" :key="letter" class="glass-index-letter py-0.5 transition-all" @click="tapIndex(letter)">
           {{ letter }}
         </text>
       </view>
