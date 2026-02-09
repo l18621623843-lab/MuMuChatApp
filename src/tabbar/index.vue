@@ -70,8 +70,8 @@ onMounted(() => {
   })
 })
 // #endif
-const activeColor = 'var(--wot-color-theme, #1890ff)'
-const inactiveColor = '#666'
+const activeColor = 'var(--wot-color-theme, #4ea3ff)'
+const inactiveColor = '#7a8391'
 function getColorByIndex(index: number) {
   return tabbarStore.curIdx === index ? activeColor : inactiveColor
 }
@@ -84,7 +84,7 @@ onShow(() => {
 
 <template>
   <view v-if="customTabbarEnable" class="h-50px pb-safe">
-    <view class="border-and-fixed bg-white" @touchmove.stop.prevent>
+    <view class="border-and-fixed glass-panel rounded-t-16px" @touchmove.stop.prevent>
       <view class="h-50px flex items-center">
         <view
           v-for="(item, index) in tabbarList" :key="index"
@@ -114,7 +114,7 @@ onShow(() => {
   left: 0;
   right: 0;
   z-index: 1000;
-  border-top: 1px solid #eee;
+  border-top: 0.5px solid rgba(182, 214, 255, 0.5);
   box-sizing: border-box;
 }
 // 中间鼓包的样式
@@ -130,11 +130,14 @@ onShow(() => {
   width: 250rpx;
   height: 250rpx;
   border-radius: 50%;
-  background-color: #fff;
-  box-shadow: inset 0 0 0 1px #fefefe;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  box-shadow: 0 4px 16px rgba(78, 163, 255, 0.15);
 
   &:active {
-    // opacity: 0.8;
+    transform: translateX(-50%) scale(0.5) translateY(-33%) scale(0.96);
+    transition: transform 0.1s ease;
   }
 }
 </style>

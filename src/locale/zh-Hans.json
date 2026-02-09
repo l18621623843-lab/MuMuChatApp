@@ -1,7 +1,8 @@
 {
-  "tabbar.home": "首页",
-  "tabbar.about": "关于",
-  "tabbar.me": "我的",
+  "tabbar.wechat": "聊天",
+  "tabbar.contacts": "通讯录",
+  "tabbar.discover": "发现",
+  "tabbar.me": "我",
   "i18n.title": "中文标题",
   "alova.title": "Alova 请求",
   "weight": "{heavy}公斤",

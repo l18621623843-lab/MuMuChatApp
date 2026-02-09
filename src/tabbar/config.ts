@@ -27,7 +27,19 @@ export const nativeTabbarList: NativeTabBarItem[] = [
     iconPath: 'static/tabbar/home.png',
     selectedIconPath: 'static/tabbar/homeHL.png',
     pagePath: 'pages/index/index',
-    text: '%tabbar.home%',
+    text: '%tabbar.wechat%',
+  },
+  {
+    iconPath: 'static/tabbar/personal.png',
+    selectedIconPath: 'static/tabbar/personalHL.png',
+    pagePath: 'pages/contacts/index',
+    text: '%tabbar.contacts%',
+  },
+  {
+    iconPath: 'static/tabbar/personal.png',
+    selectedIconPath: 'static/tabbar/personalHL.png',
+    pagePath: 'pages/discover/index',
+    text: '%tabbar.discover%',
   },
   {
     iconPath: 'static/tabbar/personal.png',
@@ -41,13 +53,13 @@ export const nativeTabbarList: NativeTabBarItem[] = [
 // 如果需要配置鼓包，需要在 'tabbar/store.ts' 里面设置，最后在 `tabbar/index.vue` 里面更改鼓包的图片
 export const customTabbarList: CustomTabBarItem[] = [
   {
-    text: '%tabbar.home%',
+    text: '%tabbar.wechat%',
     pagePath: 'pages/index/index',
     // 注意 unocss 图标需要如下处理：（二选一）
     // 1）在fg-tabbar.vue页面上引入一下并注释掉（见tabbar/index.vue代码第2行）
     // 2）配置到 unocss.config.ts 的 safelist 中
     iconType: 'unocss',
-    icon: 'i-carbon-home',
+    icon: 'i-carbon-chat',
     // badge: 'dot',
   },
   // 鼓包配置示例（2025-12-31）
@@ -62,18 +74,22 @@ export const customTabbarList: CustomTabBarItem[] = [
   //   isBulge: true,
   // },
   {
-    pagePath: 'pages/i18n/index',
-    text: '%i18n.title%',
+    pagePath: 'pages/contacts/index',
+    text: '%tabbar.contacts%',
     iconType: 'unocss',
-    icon: 'i-carbon-ibm-watson-language-translator',
-    // badge: 10,
+    icon: 'i-carbon-user-multiple',
+  },
+  {
+    pagePath: 'pages/discover/index',
+    text: '%tabbar.discover%',
+    iconType: 'unocss',
+    icon: 'i-carbon-compass',
   },
   {
     pagePath: 'pages/me/me',
     text: '%tabbar.me%',
     iconType: 'unocss',
     icon: 'i-carbon-user',
-    // badge: 10,
   },
 
   // 其他类型演示
@@ -132,8 +148,8 @@ const _tabbar: TabBar = {
   // 只有微信小程序支持 custom。App 和 H5 不生效
   custom: selectedTabbarStrategy === TABBAR_STRATEGY_MAP.CUSTOM_TABBAR,
   color: '#999999',
-  selectedColor: '#018d71',
-  backgroundColor: '#F8F8F8',
+  selectedColor: '#4ea3ff',
+  backgroundColor: '#f5f9ff',
   borderStyle: 'black',
   height: '50px',
   fontSize: '10px',

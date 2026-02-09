@@ -19,7 +19,7 @@ function getImageByIndex(index: number, item: CustomTabBarItem) {
 </script>
 
 <template>
-  <view class="flex flex-col items-center justify-center">
+  <view class="flex flex-col items-center justify-center transition-all">
     <template v-if="item.iconType === 'uiLib'">
       <!-- TODO: 以下内容请根据选择的UI库自行替换 -->
       <!-- 如：<wd-icon name="home" /> (https://wot-design-uni.cn/component/icon.html) -->
@@ -28,21 +28,21 @@ function getImageByIndex(index: number, item: CustomTabBarItem) {
       <!-- <wd-icon :name="item.icon" size="20" /> -->
     </template>
     <template v-if="item.iconType === 'unocss' || item.iconType === 'iconfont'">
-      <view :class="[item.icon, isBulge ? 'text-80px' : 'text-20px']" />
+      <view :class="[item.icon, isBulge ? 'text-44px' : 'text-21px']" class="transition-all" />
     </template>
     <template v-if="item.iconType === 'image'">
-      <image :src="getImageByIndex(index, item)" mode="scaleToFill" :class="isBulge ? 'h-80px w-80px' : 'h-24px w-24px'" />
+      <image :src="getImageByIndex(index, item)" mode="scaleToFill" :class="isBulge ? 'h-44px w-44px rounded-10px' : 'h-24px w-24px rounded-6px'" />
     </template>
-    <view v-if="!isBulge" class="mt-2px text-12px">
+    <view v-if="!isBulge" class="mt-4px text-10px font-500 transition-all">
       {{ getI18nText(item.text) }}
     </view>
     <!-- 角标显示 -->
     <view v-if="item.badge">
       <template v-if="item.badge === 'dot'">
-        <view class="absolute right-0 top-0 h-2 w-2 rounded-full bg-#f56c6c" />
+        <view class="absolute right-0 top-0 h-8px w-8px rounded-full bg-#ff5a5f shadow-sm" />
       </template>
       <template v-else>
-        <view class="absolute top-0 box-border h-5 min-w-5 center rounded-full bg-#f56c6c px-1 text-center text-xs text-white -right-3">
+        <view class="absolute top-0 box-border h-18px min-w-18px center rounded-full bg-#ff5a5f px-1 text-center text-10px text-white shadow-sm -right-2">
           {{ item.badge > 99 ? '99+' : item.badge }}
         </view>
       </template>

@@ -1,6 +1,7 @@
 {
-  "tabbar.home": "Home",
-  "tabbar.about": "About",
+  "tabbar.wechat": "Chat",
+  "tabbar.contacts": "Contacts",
+  "tabbar.discover": "Discover",
   "tabbar.me": "Me",
   "i18n.title": "En Title",
   "alova.title": "Alova Request",

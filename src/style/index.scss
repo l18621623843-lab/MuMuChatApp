@@ -12,10 +12,56 @@
 :root,
 page {
   // 修改按主题色
-  // --wot-color-theme: #37c2bc;
+  --wot-color-theme: #4ea3ff;
+  --glass-bg: rgba(234, 244, 255, 0.75);
+  --glass-border: rgba(182, 214, 255, 0.5);
+  --glass-strong: rgba(245, 249, 255, 0.88);
+  --glass-loading: rgba(255, 255, 255, 0.92);
 
   // 修改按钮背景色
   // --wot-button-primary-bg-color: green;
+}
+
+.glass-panel {
+  background: var(--glass-bg);
+  border: 0.5px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(78, 163, 255, 0.12),
+              0 2px 8px rgba(78, 163, 255, 0.08);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+}
+
+.glass-card {
+  background: var(--glass-strong);
+  border: 0.5px solid var(--glass-border);
+  box-shadow: 0 6px 20px rgba(78, 163, 255, 0.1),
+              0 2px 6px rgba(78, 163, 255, 0.06);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+}
+
+.glass-icon {
+  display: grid;
+  place-items: center;
+  background: rgba(245, 249, 255, 0.80);
+  border: 0.5px solid var(--glass-border);
+  box-shadow: 0 4px 12px rgba(78, 163, 255, 0.1);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border-radius: 9999px;
+}
+
+.glass-loading {
+  background: var(--glass-loading);
+  box-shadow: 0 4px 16px rgba(78, 163, 255, 0.08),
+              0 0 1px rgba(78, 163, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.no-bounce {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
 }
 
 /*
