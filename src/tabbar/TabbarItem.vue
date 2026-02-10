@@ -92,12 +92,33 @@ function getImageByIndex(index: number, item: CustomTabBarItem) {
   align-items: center;
   justify-content: center;
 }
+.tabbar-icon-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(78, 163, 255, 0.12));
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 10px 22px rgba(58, 163, 255, 0.16),
+    inset 0 1px 1px rgba(255, 255, 255, 0.9),
+    inset 0 -10px 18px rgba(78, 163, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(170%);
+  -webkit-backdrop-filter: blur(10px) saturate(170%);
+}
+.tabbar-item-inner.active .tabbar-icon-wrap::before {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(78, 163, 255, 0.18));
+  box-shadow:
+    0 12px 26px rgba(58, 163, 255, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.92),
+    inset 0 -12px 22px rgba(78, 163, 255, 0.14);
+}
 .tabbar-active-circle {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: rgba(90, 176, 255, 0.2);
-  box-shadow: 0 6px 12px rgba(58, 163, 255, 0.18);
+  background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.7), rgba(78, 163, 255, 0.18) 55%, rgba(78, 163, 255, 0) 72%);
+  box-shadow: 0 10px 20px rgba(58, 163, 255, 0.14);
   transform: scale(0.6);
   opacity: 0;
   transition:
@@ -130,9 +151,12 @@ function getImageByIndex(index: number, item: CustomTabBarItem) {
   position: relative;
   z-index: 1;
   transition: transform 0.2s ease;
+  color: #2f9bff;
+  filter: drop-shadow(0 6px 10px rgba(58, 163, 255, 0.22));
 }
 .tabbar-item-inner.active .tabbar-icon {
   transform: scale(1.08);
+  color: #1d8fff;
 }
 .tabbar-label {
   margin-top: 2px;

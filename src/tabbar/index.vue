@@ -125,9 +125,11 @@ onShow(() => {
   height: 60px;
   padding: 0 10px;
   border-radius: 999px;
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.04);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(14px) saturate(170%);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  box-shadow: 0 14px 32px rgba(58, 163, 255, 0.16);
 }
 .tabbar-item {
   flex: 1;

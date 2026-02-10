@@ -20,14 +20,7 @@ const chatStore = useChatStore()
 chatStore.ensureSeeded()
 const { sortedConversations, totalUnread, contacts } = storeToRefs(chatStore)
 
-const searchText = ref('')
-const chatList = computed(() => {
-  const key = searchText.value.trim().toLowerCase()
-  const list = sortedConversations.value
-  if (!key)
-    return list
-  return list.filter(c => c.title.toLowerCase().includes(key) || c.lastMessage.toLowerCase().includes(key))
-})
+const chatList = computed(() => sortedConversations.value)
 const contactsOnTelegram = computed(() => contacts.value.slice(0, 6))
 const _sys = uni.getSystemInfoSync()
 const headerPadTop = Math.max((_sys.safeAreaInsets && _sys.safeAreaInsets.top) || 0, _sys.statusBarHeight || 0) + 44
@@ -100,6 +93,14 @@ function openAddMenu() {
 function openContactsTab() {
   uni.switchTab({ url: '/pages/contacts/index' })
 }
+
+function searchSim() {
+  uni.showToast({ title: '搜索（模拟）', icon: 'none' })
+}
+
+function lockSim() {
+  uni.showToast({ title: '隐私（模拟）', icon: 'none' })
+}
 </script>
 
 <template>
@@ -107,10 +108,16 @@ function openContactsTab() {
     <view class="fixed left-0 right-0 top-0 z-1000 bg-#f2f2f2 pt-safe">
       <view class="h-44px flex items-center justify-between px-4">
         <text class="text-18px text-#3aa3ff font-700">MuMuChat</text>
-        <view class="flex items-center gap-3 text-18px text-#444">
-          <text>🔍</text>
-          <text>🔒</text>
-          <text @click="openAddMenu">⋮</text>
+        <view class="flex items-center gap-10px">
+          <view class="header-icon-btn" @click="searchSim">
+            <view class="i-carbon-search header-icon" />
+          </view>
+          <view class="header-icon-btn" @click="lockSim">
+            <view class="i-carbon-locked header-icon" />
+          </view>
+          <view class="header-icon-btn" @click="openAddMenu">
+            <view class="i-carbon-overflow-menu-vertical header-icon" />
+          </view>
         </view>
       </view>
       <view class="h-1px bg-#e6e6e6" />
@@ -121,13 +128,6 @@ function openContactsTab() {
       :style="{ paddingTop: `${headerPadTop}px` }"
       scroll-y
     >
-      <view class="px-4 pt-3">
-        <view class="flex items-center gap-2 rounded-20px bg-white px-4 py-2">
-          <text class="text-14px text-#9b9b9b">🔍</text>
-          <input v-model="searchText" class="flex-1 text-13px text-#333" placeholder="搜索" placeholder-class="text-#b0b0b0">
-          <text v-if="searchText" class="px-1 text-14px text-#9b9b9b" @click="searchText = ''">✕</text>
-        </view>
-      </view>
       <view class="bg-white">
         <view
           v-for="(item, idx) in chatList"
@@ -147,8 +147,8 @@ function openContactsTab() {
             <view class="flex items-center justify-between gap-2">
               <view class="min-w-0 flex flex-1 items-center gap-1">
                 <text class="flex-1 truncate text-15px text-#1f1f1f font-600">{{ item.title }}</text>
-                <text v-if="item.muted" class="flex-shrink-0 text-12px text-#b0b0b0">🔕</text>
-                <text v-if="item.pinned" class="flex-shrink-0 text-12px text-#b0b0b0">📌</text>
+                <view v-if="item.muted" class="i-carbon-notification-off h-14px w-14px text-#b0b0b0" />
+                <view v-if="item.pinned" class="i-carbon-pin h-14px w-14px text-#b0b0b0" />
               </view>
               <text class="flex-shrink-0 text-11px text-#9b9b9b">{{ chatStore.conversationTimeLabel(item) }}</text>
             </view>
@@ -159,7 +159,7 @@ function openContactsTab() {
 
       <view class="mt-4">
         <view class="px-4 py-2 text-12px text-#8f8f8f">
-          您在 Telegram 上的联系人
+          您在 MuMuChat 上的联系人
         </view>
         <view class="bg-white">
           <view
@@ -180,3 +180,28 @@ function openContactsTab() {
     </scroll-view>
   </view>
 </template>
+
+<style scoped lang="scss">
+.header-icon-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow:
+    0 10px 22px rgba(58, 163, 255, 0.16),
+    inset 0 1px 1px rgba(255, 255, 255, 0.9),
+    inset 0 -10px 18px rgba(78, 163, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(160%);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+}
+.header-icon {
+  width: 18px;
+  height: 18px;
+  color: #2f9bff;
+  filter: drop-shadow(0 6px 10px rgba(58, 163, 255, 0.22));
+}
+</style>
