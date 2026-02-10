@@ -15,18 +15,32 @@ chatStore.ensureSeeded()
 
 const contactId = ref('')
 const contact = computed(() => chatStore.getContact(contactId.value))
+const startingChat = ref(false)
 
 const _sys = uni.getSystemInfoSync()
 const headerPadTop = Math.max((_sys.safeAreaInsets && _sys.safeAreaInsets.top) || 0, _sys.statusBarHeight || 0) + 44
 
 function startChat() {
+  if (startingChat.value)
+    return
   const c = contact.value
   if (!c)
     return
   const conv = chatStore.createOrGetDirectConversation(c.id)
   if (!conv)
     return
-  uni.navigateTo({ url: `/pages/chat/detail?convId=${encodeURIComponent(conv.id)}` })
+  startingChat.value = true
+  uni.navigateTo({
+    url: `/pages/chat/detail?convId=${encodeURIComponent(conv.id)}`,
+    fail() {
+      uni.showToast({ title: '打开会话失败', icon: 'none' })
+    },
+    complete() {
+      setTimeout(() => {
+        startingChat.value = false
+      }, 250)
+    },
+  })
 }
 
 function showMore() {

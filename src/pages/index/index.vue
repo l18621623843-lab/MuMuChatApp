@@ -24,13 +24,31 @@ const chatList = computed(() => sortedConversations.value)
 const contactsOnTelegram = computed(() => contacts.value.slice(0, 6))
 const _sys = uni.getSystemInfoSync()
 const headerPadTop = Math.max((_sys.safeAreaInsets && _sys.safeAreaInsets.top) || 0, _sys.statusBarHeight || 0) + 44
+const openingChat = ref(false)
 
 watchEffect(() => {
   tabbarStore.setTabbarItemBadge(0, totalUnread.value)
 })
 function openChat(convId: string) {
+  if (!convId) {
+    uni.showToast({ title: '会话参数缺失', icon: 'none' })
+    return
+  }
+  if (openingChat.value)
+    return
+  openingChat.value = true
   chatStore.openConversation(convId)
-  uni.navigateTo({ url: `/pages/chat/detail?convId=${encodeURIComponent(convId)}` })
+  uni.navigateTo({
+    url: `/pages/chat/detail?convId=${encodeURIComponent(convId)}`,
+    fail() {
+      uni.showToast({ title: '打开会话失败', icon: 'none' })
+    },
+    complete() {
+      setTimeout(() => {
+        openingChat.value = false
+      }, 250)
+    },
+  })
 }
 function longPressChat(convId: string) {
   const conv = chatStore.getConversation(convId)

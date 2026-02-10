@@ -3,7 +3,7 @@ import { onLoad, onShow, onUnload } from '@dcloudio/uni-app'
 import { computed, nextTick, ref } from 'vue'
 import { useChatStore } from '@/store/chat'
 import { useUserStore } from '@/store/user'
-import { computeEffectiveKeyboardHeight } from '@/utils/keyboardAvoidance'
+import { updateKeyboardAvoidanceState } from '@/utils/keyboardAvoidance'
 
 definePage({
   style: {
@@ -29,7 +29,7 @@ const myAvatar = computed(() => userStore.userInfo.avatar || '/static/images/def
 const peerAvatar = computed(() => conversation.value?.avatar || '/static/images/default-avatar.png')
 
 const _sys = uni.getSystemInfoSync()
-const baseWindowHeight = ref(_sys.windowHeight || 0)
+const baseWindowHeight = ref(((_sys as any).safeArea && (_sys as any).safeArea.height) || _sys.windowHeight || 0)
 const windowHeight = ref(_sys.windowHeight || 0)
 const headerPadTop = Math.max((_sys.safeAreaInsets && _sys.safeAreaInsets.top) || 0, _sys.statusBarHeight || 0) + 44
 const bottomSafe = (_sys.safeAreaInsets && _sys.safeAreaInsets.bottom) || 0
@@ -37,26 +37,26 @@ const baseComposerH = 56
 const pinnedLatestH = 52
 const showPinnedLatest = ref(false)
 
-function refreshWindowHeight() {
-  const winH = uni.getSystemInfoSync().windowHeight || windowHeight.value
+function refreshWindowMetrics() {
+  const sys = uni.getSystemInfoSync() as any
+  const winH = sys.windowHeight || windowHeight.value
+  const safeAreaHeight = (sys.safeArea && sys.safeArea.height) || 0
   windowHeight.value = winH
-  return winH
+  return { winH, safeAreaHeight }
 }
 
 function applyKeyboardMetrics(rawHeight: number) {
-  const winH = refreshWindowHeight()
-  if (rawHeight) {
-    keyboardHeight.value = computeEffectiveKeyboardHeight({
-      rawHeight,
-      baseWindowHeight: baseWindowHeight.value,
-      currentWindowHeight: winH,
-    })
-  }
-  else {
-    keyboardHeight.value = 0
+  const { winH, safeAreaHeight } = refreshWindowMetrics()
+  const next = updateKeyboardAvoidanceState({
+    prevBaseWindowHeight: baseWindowHeight.value,
+    rawKeyboardHeight: rawHeight,
+    currentWindowHeight: winH,
+    safeAreaHeight,
+  })
+  baseWindowHeight.value = next.baseWindowHeight
+  keyboardHeight.value = next.effectiveKeyboardHeight
+  if (!rawHeight)
     rawKeyboardHeight.value = 0
-    baseWindowHeight.value = winH
-  }
 }
 
 function formatTimeDivider(ts: number) {
@@ -164,7 +164,6 @@ function goBack() {
 function handleFocus() {
   inputFocused.value = true
   nextTick(() => syncScrollToBottom())
-  setTimeout(() => applyKeyboardMetrics(rawKeyboardHeight.value), 0)
 }
 
 function handleBlur() {
@@ -185,6 +184,16 @@ function moreSim() {
 
 onLoad((query) => {
   convId.value = `${query?.convId || ''}`
+  if (!convId.value) {
+    uni.showToast({ title: '会话参数缺失', icon: 'none' })
+    setTimeout(() => uni.navigateBack(), 150)
+    return
+  }
+  if (!chatStore.getConversation(convId.value)) {
+    uni.showToast({ title: '会话不存在或已被删除', icon: 'none' })
+    setTimeout(() => uni.navigateBack(), 150)
+    return
+  }
   chatStore.openConversation(convId.value)
   nextTick(() => syncScrollToBottom())
 
