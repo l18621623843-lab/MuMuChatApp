@@ -19,7 +19,7 @@ function getImageByIndex(index: number, item: CustomTabBarItem) {
 </script>
 
 <template>
-  <view class="flex flex-col items-center justify-center transition-all">
+  <view class="relative flex flex-col items-center justify-center transition-all">
     <template v-if="item.iconType === 'uiLib'">
       <!-- TODO: 以下内容请根据选择的UI库自行替换 -->
       <!-- 如：<wd-icon name="home" /> (https://wot-design-uni.cn/component/icon.html) -->
