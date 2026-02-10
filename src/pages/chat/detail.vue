@@ -3,6 +3,7 @@ import { onLoad, onShow, onUnload } from '@dcloudio/uni-app'
 import { computed, nextTick, ref } from 'vue'
 import { useChatStore } from '@/store/chat'
 import { useUserStore } from '@/store/user'
+import { computeEffectiveKeyboardHeight } from '@/utils/keyboardAvoidance'
 
 definePage({
   style: {
@@ -20,6 +21,7 @@ const draft = ref('')
 const scrollIntoView = ref('')
 const inputFocused = ref(false)
 const keyboardHeight = ref(0)
+const rawKeyboardHeight = ref(0)
 
 const conversation = computed(() => chatStore.getConversation(convId.value))
 const messages = computed(() => chatStore.getMessages(convId.value))
@@ -34,6 +36,28 @@ const bottomSafe = (_sys.safeAreaInsets && _sys.safeAreaInsets.bottom) || 0
 const baseComposerH = 56
 const pinnedLatestH = 52
 const showPinnedLatest = ref(false)
+
+function refreshWindowHeight() {
+  const winH = uni.getSystemInfoSync().windowHeight || windowHeight.value
+  windowHeight.value = winH
+  return winH
+}
+
+function applyKeyboardMetrics(rawHeight: number) {
+  const winH = refreshWindowHeight()
+  if (rawHeight) {
+    keyboardHeight.value = computeEffectiveKeyboardHeight({
+      rawHeight,
+      baseWindowHeight: baseWindowHeight.value,
+      currentWindowHeight: winH,
+    })
+  }
+  else {
+    keyboardHeight.value = 0
+    rawKeyboardHeight.value = 0
+    baseWindowHeight.value = winH
+  }
+}
 
 function formatTimeDivider(ts: number) {
   const d = new Date(ts)
@@ -140,6 +164,7 @@ function goBack() {
 function handleFocus() {
   inputFocused.value = true
   nextTick(() => syncScrollToBottom())
+  setTimeout(() => applyKeyboardMetrics(rawKeyboardHeight.value), 0)
 }
 
 function handleBlur() {
@@ -164,16 +189,9 @@ onLoad((query) => {
   nextTick(() => syncScrollToBottom())
 
   const handler = (res: UniApp.OnKeyboardHeightChangeResult) => {
-    const winH = uni.getSystemInfoSync().windowHeight || baseWindowHeight.value
-    windowHeight.value = winH
-    if (res.height) {
-      const delta = Math.max(baseWindowHeight.value - winH, 0)
-      keyboardHeight.value = Math.max(res.height - delta, 0)
-    }
-    else {
-      keyboardHeight.value = 0
-      baseWindowHeight.value = winH
-    }
+    rawKeyboardHeight.value = res.height || 0
+    applyKeyboardMetrics(rawKeyboardHeight.value)
+    setTimeout(() => applyKeyboardMetrics(rawKeyboardHeight.value), 60)
     nextTick(() => syncScrollToBottom())
   }
   uni.onKeyboardHeightChange(handler)
@@ -194,7 +212,7 @@ onShow(() => {
 </script>
 
 <template>
-  <view class="chat-page min-h-screen flex flex-col">
+  <view class="chat-page">
     <!-- Header 固定在顶部 -->
     <view class="chat-header fixed left-0 right-0 top-0 z-1000 pt-safe">
       <view class="h-44px flex items-center justify-between px-3">
