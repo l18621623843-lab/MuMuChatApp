@@ -36,6 +36,34 @@ const helpSettings = [
   { id: 4, title: 'Telegram 新功能', icon: '🆕', color: '#4cd964' },
   { id: 5, title: '隐私政策', icon: '✅', color: '#2ecc71' },
 ]
+
+function openSettings(key: string, title: string) {
+  uni.navigateTo({ url: `/pages/settings/detail?key=${encodeURIComponent(key)}&title=${encodeURIComponent(title)}` })
+}
+
+function tapMain(item: { title: string }) {
+  const map: Record<string, string> = {
+    账号: 'account',
+    聊天设置: 'chat',
+    隐私与安全: 'privacy',
+    通知: 'notifications',
+    数据和储存: 'data',
+    设备: 'devices',
+    语言: 'language',
+  }
+  openSettings(map[item.title] || 'account', item.title)
+}
+
+function tapHelp(item: { title: string }) {
+  if (item.title === '帮助' || item.title === '向我们提问' || item.title === '常见问题' || item.title === 'Telegram 新功能')
+    openSettings('help', item.title)
+  else
+    uni.showToast({ title: `${item.title}（模拟）`, icon: 'none' })
+}
+
+function toastSim(title: string) {
+  uni.showToast({ title: `${title}（模拟）`, icon: 'none' })
+}
 </script>
 
 <template>
@@ -59,6 +87,7 @@ const helpSettings = [
             :key="item.id"
             class="flex items-center gap-3 px-4 py-3 transition-colors active:bg-#f5f5f5"
             :class="idx === mainSettings.length - 1 ? '' : 'border-b-1 border-#ededed'"
+            @click="tapMain(item)"
           >
             <view class="h-40px w-40px flex items-center justify-center rounded-12px text-16px text-white" :style="{ backgroundColor: item.color }">
               {{ item.icon }}
@@ -76,6 +105,7 @@ const helpSettings = [
             :key="item.id"
             class="flex items-center gap-3 px-4 py-3 transition-colors active:bg-#f5f5f5"
             :class="idx === premiumSettings.length - 1 ? '' : 'border-b-1 border-#ededed'"
+            @click="toastSim(item.title)"
           >
             <view class="h-40px w-40px flex items-center justify-center rounded-12px text-16px text-white" :style="{ backgroundColor: item.color }">
               {{ item.icon }}
@@ -90,6 +120,7 @@ const helpSettings = [
             :key="item.id"
             class="flex items-center gap-3 px-4 py-3 transition-colors active:bg-#f5f5f5"
             :class="idx === helpSettings.length - 1 ? '' : 'border-b-1 border-#ededed'"
+            @click="tapHelp(item)"
           >
             <view class="h-40px w-40px flex items-center justify-center rounded-12px text-16px text-white" :style="{ backgroundColor: item.color }">
               {{ item.icon }}

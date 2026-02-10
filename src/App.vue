@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { onHide, onLaunch, onShow } from '@dcloudio/uni-app'
 import { navigateToInterceptor } from '@/router/interceptor'
+import { watchEffect } from 'vue'
+import { useChatStore } from '@/store/chat'
+import { tabbarStore } from '@/tabbar/store'
+
+const chatStore = useChatStore()
+chatStore.ensureSeeded()
+watchEffect(() => {
+  tabbarStore.setTabbarItemBadge(0, chatStore.totalUnread)
+})
 
 onLaunch((options) => {
   console.log('App.vue onLaunch', options)

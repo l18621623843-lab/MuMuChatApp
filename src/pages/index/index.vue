@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { storeToRefs } from 'pinia'
+import { useChatStore } from '@/store/chat'
 import { tabbarStore } from '@/tabbar/store'
 
 defineOptions({
@@ -14,55 +16,89 @@ definePage({
   },
 })
 
-const chatList = ref([
-  { id: 1, name: '绽骨开发进度群', message: '清大：群资料 [图片]', time: '12:24', unread: 2, avatar: '/static/images/avatar.jpg' },
-  { id: 2, name: '（清大）显橙', message: '这歌不错太长太长了', time: '11:56', unread: 0, avatar: '/static/images/default-avatar.png' },
-  { id: 3, name: '交易临时小分队', message: '清大：自产化测试人群：好', time: '11:52', unread: 3, avatar: '/static/images/avatar.jpg' },
-  { id: 4, name: '现货+需求侧产品讨论群', message: '清大：显橙：执行脚本全部重启下', time: '10:21', unread: 0, avatar: '/static/images/default-avatar.png' },
-  { id: 5, name: '谭威威', message: '好的', time: '9:30', unread: 0, avatar: '/static/images/avatar.jpg' },
-  { id: 6, name: '大家庭 family', message: '[动画表情]', time: '周六', unread: 0, avatar: '/static/images/default-avatar.png' },
-  { id: 7, name: '立海（广电项目生产环境维护/…）', message: '重启一下看看海哥', time: '周五', unread: 1, avatar: '/static/images/avatar.jpg' },
-  { id: 8, name: '（清大）周璟', message: '好的', time: '周五', unread: 0, avatar: '/static/images/default-avatar.png' },
-  { id: 9, name: '子站攻坚', message: '清大：张玉恒：是否刷新，是否显示菜单', time: '周五', unread: 0, avatar: '/static/images/avatar.jpg' },
-  { id: 10, name: '（清大）冬连', message: '收到', time: '周五', unread: 0, avatar: '/static/images/default-avatar.png' },
-])
-const contactsOnTelegram = [
-  { id: 1, name: '龙', status: '近期曾上线', avatar: '/static/images/avatar.jpg' },
-  { id: 2, name: '190 7542 2755', status: '很久前上线', avatar: '/static/images/default-avatar.png' },
-  { id: 3, name: '慕龙 应', status: '很久前上线', avatar: '/static/images/avatar.jpg' },
-]
+const chatStore = useChatStore()
+chatStore.ensureSeeded()
+const { sortedConversations, totalUnread, contacts } = storeToRefs(chatStore)
+
+const searchText = ref('')
+const chatList = computed(() => {
+  const key = searchText.value.trim().toLowerCase()
+  const list = sortedConversations.value
+  if (!key)
+    return list
+  return list.filter(c => c.title.toLowerCase().includes(key) || c.lastMessage.toLowerCase().includes(key))
+})
+const contactsOnTelegram = computed(() => contacts.value.slice(0, 6))
 const _sys = uni.getSystemInfoSync()
 const headerPadTop = Math.max((_sys.safeAreaInsets && _sys.safeAreaInsets.top) || 0, _sys.statusBarHeight || 0) + 44
-const totalUnread = computed(() => chatList.value.reduce((sum, item) => sum + (item.unread || 0), 0))
 
 watchEffect(() => {
   tabbarStore.setTabbarItemBadge(0, totalUnread.value)
 })
-function openChat(item) {
-  item.unread = 0
-  uni.showToast({ title: `打开会话：${item.name}`, icon: 'none' })
+function openChat(convId: string) {
+  chatStore.openConversation(convId)
+  uni.navigateTo({ url: `/pages/chat/detail?convId=${encodeURIComponent(convId)}` })
 }
-function longPressChat(item) {
-  const actions = ['标记为未读', '标记为已读', '删除']
+function longPressChat(convId: string) {
+  const conv = chatStore.getConversation(convId)
+  if (!conv)
+    return
+  const actions = [
+    conv.unread ? '标记为已读' : '标记为未读',
+    conv.pinned ? '取消置顶' : '置顶',
+    conv.muted ? '取消静音' : '静音',
+    '模拟收到消息',
+    '删除',
+  ]
   uni.showActionSheet({
     itemList: actions,
     success(res) {
       const idx = res.tapIndex
-      if (actions[idx] === '标记为未读') {
-        item.unread = Math.max(1, item.unread || 0)
+      const action = actions[idx]
+      if (action === '标记为未读') {
+        chatStore.markUnread(convId)
       }
-      else if (actions[idx] === '标记为已读') {
-        item.unread = 0
+      else if (action === '标记为已读') {
+        chatStore.markRead(convId)
       }
-      else if (actions[idx] === '删除') {
-        const arr = chatList.value
-        arr.splice(arr.indexOf(item), 1)
+      else if (action === '置顶' || action === '取消置顶') {
+        chatStore.togglePin(convId)
+      }
+      else if (action === '静音' || action === '取消静音') {
+        chatStore.toggleMute(convId)
+      }
+      else if (action === '模拟收到消息') {
+        chatStore.simulateIncomingText(convId, '收到，我马上看。')
+      }
+      else if (action === '删除') {
+        chatStore.deleteConversation(convId)
       }
     },
   })
 }
 function openAddMenu() {
-  uni.showActionSheet({ itemList: ['发起群聊', '添加朋友', '扫一扫'] })
+  const actions = ['发起群聊', '添加朋友', '扫一扫', '模拟收到消息']
+  uni.showActionSheet({
+    itemList: actions,
+    success(res) {
+      const action = actions[res.tapIndex]
+      if (action === '添加朋友') {
+        uni.switchTab({ url: '/pages/contacts/index' })
+      }
+      else if (action === '模拟收到消息') {
+        const first = sortedConversations.value[0]
+        if (first)
+          chatStore.simulateIncomingText(first.id, '你方便吗？')
+      }
+      else {
+        uni.showToast({ title: action, icon: 'none' })
+      }
+    },
+  })
+}
+
+function openContactsTab() {
+  uni.switchTab({ url: '/pages/contacts/index' })
 }
 </script>
 
@@ -85,27 +121,38 @@ function openAddMenu() {
       :style="{ paddingTop: `${headerPadTop}px` }"
       scroll-y
     >
+      <view class="px-4 pt-3">
+        <view class="flex items-center gap-2 rounded-20px bg-white px-4 py-2">
+          <text class="text-14px text-#9b9b9b">🔍</text>
+          <input v-model="searchText" class="flex-1 text-13px text-#333" placeholder="搜索" placeholder-class="text-#b0b0b0">
+          <text v-if="searchText" class="px-1 text-14px text-#9b9b9b" @click="searchText = ''">✕</text>
+        </view>
+      </view>
       <view class="bg-white">
         <view
           v-for="(item, idx) in chatList"
           :key="item.id"
           class="flex items-center gap-3 px-4 py-3 transition-colors active:bg-#f5f5f5"
           :class="idx === chatList.length - 1 ? '' : 'border-b-1 border-#ededed'"
-          @click="openChat(item)"
-          @longpress="longPressChat(item)"
+          @click="openChat(item.id)"
+          @longpress="longPressChat(item.id)"
         >
           <view class="relative h-50px w-50px" style="overflow: visible;">
             <image :src="item.avatar" class="block h-full w-full rounded-full" />
             <view v-if="item.unread" class="absolute right--2px top--2px h-18px min-w-18px flex items-center justify-center rounded-full bg-#ff4d4f px-1.5 text-11px text-white font-600 shadow">
-              {{ item.unread }}
+              {{ item.unread > 99 ? '99+' : item.unread }}
             </view>
           </view>
           <view class="min-w-0 flex flex-1 flex-col gap-1 overflow-hidden">
             <view class="flex items-center justify-between gap-2">
-              <text class="flex-1 truncate text-15px text-#1f1f1f font-600">{{ item.name }}</text>
-              <text class="flex-shrink-0 text-11px text-#9b9b9b">{{ item.time }}</text>
+              <view class="min-w-0 flex flex-1 items-center gap-1">
+                <text class="flex-1 truncate text-15px text-#1f1f1f font-600">{{ item.title }}</text>
+                <text v-if="item.muted" class="flex-shrink-0 text-12px text-#b0b0b0">🔕</text>
+                <text v-if="item.pinned" class="flex-shrink-0 text-12px text-#b0b0b0">📌</text>
+              </view>
+              <text class="flex-shrink-0 text-11px text-#9b9b9b">{{ chatStore.conversationTimeLabel(item) }}</text>
             </view>
-            <text class="truncate text-13px text-#9b9b9b">{{ item.message }}</text>
+            <text class="truncate text-13px text-#9b9b9b">{{ item.lastMessage }}</text>
           </view>
         </view>
       </view>
@@ -120,11 +167,12 @@ function openAddMenu() {
             :key="contact.id"
             class="flex items-center gap-3 px-4 py-3 transition-colors active:bg-#f5f5f5"
             :class="idx === contactsOnTelegram.length - 1 ? '' : 'border-b-1 border-#ededed'"
+            @click="openContactsTab"
           >
             <image :src="contact.avatar" class="h-44px w-44px rounded-full" />
             <view class="min-w-0 flex flex-1 flex-col gap-1">
               <text class="truncate text-15px text-#1f1f1f font-600">{{ contact.name }}</text>
-              <text class="truncate text-12px text-#9b9b9b">{{ contact.status }}</text>
+              <text class="truncate text-12px text-#9b9b9b">{{ contact.lastSeenText }}</text>
             </view>
           </view>
         </view>

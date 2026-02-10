@@ -30,28 +30,41 @@ function getImageByIndex(index: number, item: CustomTabBarItem) {
     <template v-if="item.iconType === 'unocss' || item.iconType === 'iconfont'">
       <view class="tabbar-icon-wrap">
         <view class="tabbar-active-circle" :class="{ active: tabbarStore.curIdx === index }" />
-        <view :class="[item.icon, isBulge ? 'text-44px' : 'text-24px']" class="tabbar-icon" />
+        <view class="tabbar-icon-box" :class="{ bulge: isBulge }">
+          <view :class="[item.icon, isBulge ? 'text-44px' : 'text-24px']" class="tabbar-icon" />
+          <template v-if="!isBulge && item.badge">
+            <template v-if="item.badge === 'dot'">
+              <view class="tabbar-badge h-8px w-8px rounded-full bg-#ff5a5f shadow-sm" />
+            </template>
+            <template v-else>
+              <view class="tabbar-badge box-border h-18px min-w-18px center rounded-full bg-#ff5a5f px-1 text-center text-10px text-white shadow-sm">
+                {{ item.badge > 99 ? '99+' : item.badge }}
+              </view>
+            </template>
+          </template>
+        </view>
       </view>
     </template>
     <template v-if="item.iconType === 'image'">
       <view class="tabbar-icon-wrap">
         <view class="tabbar-active-circle" :class="{ active: tabbarStore.curIdx === index }" />
-        <image :src="getImageByIndex(index, item)" mode="scaleToFill" :class="isBulge ? 'h-44px w-44px rounded-10px' : 'h-24px w-24px rounded-7px'" class="tabbar-icon" />
+        <view class="tabbar-icon-box" :class="{ bulge: isBulge }">
+          <image :src="getImageByIndex(index, item)" mode="scaleToFill" :class="isBulge ? 'h-44px w-44px rounded-10px' : 'h-24px w-24px rounded-7px'" class="tabbar-icon" />
+          <template v-if="!isBulge && item.badge">
+            <template v-if="item.badge === 'dot'">
+              <view class="tabbar-badge h-8px w-8px rounded-full bg-#ff5a5f shadow-sm" />
+            </template>
+            <template v-else>
+              <view class="tabbar-badge box-border h-18px min-w-18px center rounded-full bg-#ff5a5f px-1 text-center text-10px text-white shadow-sm">
+                {{ item.badge > 99 ? '99+' : item.badge }}
+              </view>
+            </template>
+          </template>
+        </view>
       </view>
     </template>
     <view v-if="!isBulge" class="tabbar-label">
       {{ getI18nText(item.text) }}
-    </view>
-    <!-- 角标显示 -->
-    <view v-if="item.badge">
-      <template v-if="item.badge === 'dot'">
-        <view class="absolute right-0 top-0 h-8px w-8px rounded-full bg-#ff5a5f shadow-sm" />
-      </template>
-      <template v-else>
-        <view class="absolute top-0 box-border h-18px min-w-18px center rounded-full bg-#ff5a5f px-1 text-center text-10px text-white shadow-sm -right-2">
-          {{ item.badge > 99 ? '99+' : item.badge }}
-        </view>
-      </template>
     </view>
   </view>
 </template>
@@ -94,6 +107,24 @@ function getImageByIndex(index: number, item: CustomTabBarItem) {
 .tabbar-active-circle.active {
   transform: scale(1);
   opacity: 1;
+}
+.tabbar-icon-box {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tabbar-icon-box.bulge {
+  width: 44px;
+  height: 44px;
+}
+.tabbar-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(50%, -50%);
 }
 .tabbar-icon {
   position: relative;

@@ -1,4 +1,8 @@
 <script lang="ts" setup>
+import { storeToRefs } from 'pinia'
+import { computed, ref } from 'vue'
+import { useChatStore } from '@/store/chat'
+
 definePage({
   style: {
     navigationStyle: 'custom',
@@ -6,31 +10,40 @@ definePage({
   },
 })
 
+const chatStore = useChatStore()
+chatStore.ensureSeeded()
+const { contactsBySections } = storeToRefs(chatStore)
+
 const _sys = uni.getSystemInfoSync()
 const headerPadTop = Math.max((_sys.safeAreaInsets && _sys.safeAreaInsets.top) || 0, _sys.statusBarHeight || 0) + 44
+
+const searchText = ref('')
 
 const quickList = [
   { id: 1, title: '邀请朋友', color: '#5ab0ff', icon: '👥' },
   { id: 2, title: '最近的通话', color: '#4cd964', icon: '📞' },
+  { id: 3, title: '新建群组', color: '#f0a045', icon: '👥' },
 ]
 
-const contactSections = [
-  {
-    letter: '按姓名排序',
-    list: [
-      { id: 1, name: '190 7542 2755', status: '很久前上线', avatar: '/static/images/default-avatar.png' },
-      { id: 2, name: '龙', status: '近期曾上线', avatar: '/static/images/avatar.jpg' },
-      { id: 3, name: '蒋龙 应', status: '很久前上线', avatar: '/static/images/avatar.jpg' },
-    ],
-  },
-]
+const contactSections = computed(() => {
+  const key = searchText.value.trim().toLowerCase()
+  if (!key)
+    return contactsBySections.value
+  return contactsBySections.value
+    .map(s => ({ ...s, list: s.list.filter(c => c.name.toLowerCase().includes(key) || (c.phone || '').includes(key) || (c.username || '').toLowerCase().includes(key)) }))
+    .filter(s => s.list.length)
+})
 
 function tapQuick(item) {
-  uni.showToast({ title: item.title, icon: 'none' })
+  if (item.title === '最近的通话') {
+    uni.navigateTo({ url: '/pages/calls/index' })
+    return
+  }
+  uni.showToast({ title: `${item.title}（模拟）`, icon: 'none' })
 }
 
-function tapContact(item) {
-  uni.showToast({ title: item.name, icon: 'none' })
+function tapContact(item: { id: string }) {
+  uni.navigateTo({ url: `/pages/contacts/detail?contactId=${encodeURIComponent(item.id)}` })
 }
 </script>
 
@@ -49,9 +62,10 @@ function tapContact(item) {
       :style="{ paddingTop: `${headerPadTop}px` }"
       scroll-y
     >
-      <view class="mx-4 mt-3 flex items-center gap-2 rounded-20px bg-white px-4 py-2 text-13px text-#9b9b9b">
-        <text class="text-14px">🔍</text>
-        <text>搜索联系人</text>
+      <view class="mx-4 mt-3 flex items-center gap-2 rounded-20px bg-white px-4 py-2">
+        <text class="text-14px text-#9b9b9b">🔍</text>
+        <input v-model="searchText" class="flex-1 text-13px text-#333" placeholder="搜索联系人" placeholder-class="text-#b0b0b0">
+        <text v-if="searchText" class="px-1 text-14px text-#9b9b9b" @click="searchText = ''">✕</text>
       </view>
 
       <view class="mx-4 mt-3 overflow-hidden rounded-16px bg-white">
@@ -87,7 +101,7 @@ function tapContact(item) {
             <image :src="item.avatar" class="h-44px w-44px rounded-full" />
             <view class="min-w-0 flex flex-1 flex-col gap-1">
               <text class="truncate text-15px text-#1f1f1f font-600">{{ item.name }}</text>
-              <text class="truncate text-12px text-#9b9b9b">{{ item.status }}</text>
+              <text class="truncate text-12px text-#9b9b9b">{{ item.lastSeenText }}</text>
             </view>
           </view>
         </view>
