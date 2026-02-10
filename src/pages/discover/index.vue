@@ -101,21 +101,6 @@ function toastSim(title: string) {
 
         <view class="mt-3 overflow-hidden rounded-16px bg-white">
           <view
-            v-for="(item, idx) in premiumSettings"
-            :key="item.id"
-            class="flex items-center gap-3 px-4 py-3 transition-colors active:bg-#f5f5f5"
-            :class="idx === premiumSettings.length - 1 ? '' : 'border-b-1 border-#ededed'"
-            @click="toastSim(item.title)"
-          >
-            <view class="h-40px w-40px flex items-center justify-center rounded-12px text-16px text-white" :style="{ backgroundColor: item.color }">
-              {{ item.icon }}
-            </view>
-            <text class="text-15px text-#1f1f1f font-600">{{ item.title }}</text>
-          </view>
-        </view>
-
-        <view class="mt-3 overflow-hidden rounded-16px bg-white">
-          <view
             v-for="(item, idx) in helpSettings"
             :key="item.id"
             class="flex items-center gap-3 px-4 py-3 transition-colors active:bg-#f5f5f5"

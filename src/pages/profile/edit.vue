@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { computed, reactive } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { computed, reactive } from 'vue'
 import { useUserStore } from '@/store/user'
 
 definePage({
