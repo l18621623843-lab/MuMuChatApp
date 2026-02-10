@@ -19,7 +19,7 @@ function getImageByIndex(index: number, item: CustomTabBarItem) {
 </script>
 
 <template>
-  <view class="relative flex flex-col items-center justify-center transition-all">
+  <view class="tabbar-item-inner" :class="{ active: tabbarStore.curIdx === index }">
     <template v-if="item.iconType === 'uiLib'">
       <!-- TODO: 以下内容请根据选择的UI库自行替换 -->
       <!-- 如：<wd-icon name="home" /> (https://wot-design-uni.cn/component/icon.html) -->
@@ -28,16 +28,18 @@ function getImageByIndex(index: number, item: CustomTabBarItem) {
       <!-- <wd-icon :name="item.icon" size="20" /> -->
     </template>
     <template v-if="item.iconType === 'unocss' || item.iconType === 'iconfont'">
-      <view class="glass-tabbar-icon-wrapper" :class="{ 'active': tabbarStore.curIdx === index }">
-        <view :class="[item.icon, isBulge ? 'text-44px' : 'text-22px']" class="transition-all relative z-1" />
+      <view class="tabbar-icon-wrap">
+        <view class="tabbar-active-circle" :class="{ active: tabbarStore.curIdx === index }" />
+        <view :class="[item.icon, isBulge ? 'text-44px' : 'text-24px']" class="tabbar-icon" />
       </view>
     </template>
     <template v-if="item.iconType === 'image'">
-      <view class="glass-tabbar-icon-wrapper" :class="{ 'active': tabbarStore.curIdx === index }">
-        <image :src="getImageByIndex(index, item)" mode="scaleToFill" :class="isBulge ? 'h-44px w-44px rounded-10px' : 'h-26px w-26px rounded-7px'" />
+      <view class="tabbar-icon-wrap">
+        <view class="tabbar-active-circle" :class="{ active: tabbarStore.curIdx === index }" />
+        <image :src="getImageByIndex(index, item)" mode="scaleToFill" :class="isBulge ? 'h-44px w-44px rounded-10px' : 'h-24px w-24px rounded-7px'" class="tabbar-icon" />
       </view>
     </template>
-    <view v-if="!isBulge" class="mt-4px text-10px font-500 transition-all">
+    <view v-if="!isBulge" class="tabbar-label">
       {{ getI18nText(item.text) }}
     </view>
     <!-- 角标显示 -->
@@ -53,3 +55,64 @@ function getImageByIndex(index: number, item: CustomTabBarItem) {
     </view>
   </view>
 </template>
+
+<style scoped lang="scss">
+.tabbar-item-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
+}
+.tabbar-item-inner.active {
+  transform: translateY(-1px);
+}
+.tabbar-icon-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tabbar-active-circle {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(90, 176, 255, 0.2);
+  box-shadow: 0 6px 12px rgba(58, 163, 255, 0.18);
+  transform: scale(0.6);
+  opacity: 0;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+.tabbar-active-circle.active {
+  transform: scale(1);
+  opacity: 1;
+}
+.tabbar-icon {
+  position: relative;
+  z-index: 1;
+  transition: transform 0.2s ease;
+}
+.tabbar-item-inner.active .tabbar-icon {
+  transform: scale(1.08);
+}
+.tabbar-label {
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.75;
+  transition:
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+.tabbar-item-inner.active .tabbar-label {
+  opacity: 1;
+}
+</style>

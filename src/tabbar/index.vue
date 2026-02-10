@@ -71,7 +71,7 @@ onMounted(() => {
 })
 // #endif
 const activeColor = 'var(--wot-color-theme, #4ea3ff)'
-const inactiveColor = '#7a8391'
+const inactiveColor = '#2b2b2b'
 function getColorByIndex(index: number) {
   return tabbarStore.curIdx === index ? activeColor : inactiveColor
 }
@@ -83,39 +83,59 @@ onShow(() => {
 </script>
 
 <template>
-  <view v-if="customTabbarEnable" class="h-50px pb-safe">
-    <view class="border-and-fixed glass-panel rounded-t-16px" @touchmove.stop.prevent>
-      <view class="h-50px flex items-center">
+  <view v-if="customTabbarEnable" class="h-72px pb-safe">
+    <view class="tabbar-shell" @touchmove.stop.prevent>
+      <view class="tabbar-pill">
         <view
           v-for="(item, index) in tabbarList" :key="index"
-          class="flex flex-1 flex-col items-center justify-center"
+          class="tabbar-item"
           :style="{ color: getColorByIndex(index) }"
           @click="handleClick(index)"
         >
           <view v-if="item.isBulge" class="relative">
-            <!-- 中间一个鼓包tabbarItem的处理 -->
             <view class="bulge">
               <TabbarItem :item="item" :index="index" class="text-center" is-bulge />
             </view>
           </view>
-          <TabbarItem v-else :item="item" :index="index" class="relative px-3 text-center" />
+          <TabbarItem v-else :item="item" :index="index" class="text-center" />
         </view>
       </view>
-
       <view class="pb-safe" />
     </view>
   </view>
 </template>
 
 <style scoped lang="scss">
-.border-and-fixed {
+.tabbar-shell {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
   z-index: 1000;
-  border-top: 0.5px solid rgba(182, 214, 255, 0.5);
+  display: flex;
+  justify-content: center;
   box-sizing: border-box;
+}
+.tabbar-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 540px;
+  height: 60px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+.tabbar-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  transition: color 0.2s ease;
 }
 // 中间鼓包的样式
 .bulge {
