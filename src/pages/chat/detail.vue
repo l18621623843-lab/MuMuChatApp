@@ -27,9 +27,13 @@ const myAvatar = computed(() => userStore.userInfo.avatar || '/static/images/def
 const peerAvatar = computed(() => conversation.value?.avatar || '/static/images/default-avatar.png')
 
 const _sys = uni.getSystemInfoSync()
+const baseWindowHeight = ref(_sys.windowHeight || 0)
+const windowHeight = ref(_sys.windowHeight || 0)
 const headerPadTop = Math.max((_sys.safeAreaInsets && _sys.safeAreaInsets.top) || 0, _sys.statusBarHeight || 0) + 44
 const bottomSafe = (_sys.safeAreaInsets && _sys.safeAreaInsets.bottom) || 0
 const baseComposerH = 56
+const pinnedLatestH = 52
+const showPinnedLatest = ref(false)
 
 function formatTimeDivider(ts: number) {
   const d = new Date(ts)
@@ -58,20 +62,41 @@ const renderItems = computed(() => {
   return out
 })
 
+const pinnedMsg = computed(() => {
+  const list = messages.value
+  return list.length ? list[list.length - 1] : undefined
+})
+
+const listBottomOffsetPx = computed(() => baseComposerH + bottomSafe + keyboardHeight.value)
+const listTopOffsetPx = computed(() => headerPadTop + (showPinnedLatest.value ? pinnedLatestH : 0))
+
 const composerStyle = computed(() => ({
   paddingBottom: `${bottomSafe}px`,
-  transform: `translate3d(0, ${keyboardHeight.value ? `-${keyboardHeight.value}px` : '0'}, 0)`,
+  bottom: `${keyboardHeight.value}px`,
 }))
 
-const scrollPadBottom = computed(() => {
-  return `${baseComposerH + bottomSafe + keyboardHeight.value}px`
-})
+const messageListStyle = computed(() => ({
+  position: 'fixed' as const,
+  left: 0,
+  right: 0,
+  top: `${listTopOffsetPx.value}px`,
+  bottom: `${listBottomOffsetPx.value}px`,
+}))
+
+interface ChatScrollEvent { detail: { scrollTop: number, scrollHeight: number } }
+
+function handleScroll(e: ChatScrollEvent) {
+  const clientH = Math.max(windowHeight.value - headerPadTop - listBottomOffsetPx.value, 0)
+  const remain = e.detail.scrollHeight - (e.detail.scrollTop + clientH)
+  showPinnedLatest.value = remain > 80
+}
 
 function syncScrollToBottom() {
   const last = renderItems.value[renderItems.value.length - 1]
   if (!last)
     return
   scrollIntoView.value = last.id
+  showPinnedLatest.value = false
 }
 
 async function send() {
@@ -138,8 +163,17 @@ onLoad((query) => {
   chatStore.openConversation(convId.value)
   nextTick(() => syncScrollToBottom())
 
-  const handler = (res: any) => {
-    keyboardHeight.value = res.height || 0
+  const handler = (res: UniApp.OnKeyboardHeightChangeResult) => {
+    const winH = uni.getSystemInfoSync().windowHeight || baseWindowHeight.value
+    windowHeight.value = winH
+    if (res.height) {
+      const delta = Math.max(baseWindowHeight.value - winH, 0)
+      keyboardHeight.value = Math.max(res.height - delta, 0)
+    }
+    else {
+      keyboardHeight.value = 0
+      baseWindowHeight.value = winH
+    }
     nextTick(() => syncScrollToBottom())
   }
   uni.onKeyboardHeightChange(handler)
@@ -161,6 +195,7 @@ onShow(() => {
 
 <template>
   <view class="chat-page min-h-screen flex flex-col">
+    <!-- Header 固定在顶部 -->
     <view class="chat-header fixed left-0 right-0 top-0 z-1000 pt-safe">
       <view class="h-44px flex items-center justify-between px-3">
         <view class="flex items-center gap-2" @click="goBack">
@@ -183,12 +218,25 @@ onShow(() => {
       <view class="h-1px bg-#e6e6e6" />
     </view>
 
+    <view
+      v-if="showPinnedLatest && pinnedMsg"
+      class="pinned-latest fixed left-0 right-0 z-900"
+      :style="{ top: `${headerPadTop}px` }"
+    >
+      <view class="pinned-latest-inner" :class="pinnedMsg.outgoing ? 'outgoing' : 'incoming'">
+        <text class="pinned-latest-label">最新</text>
+        <text class="pinned-latest-text" number-of-lines="1">{{ pinnedMsg.text }}</text>
+      </view>
+    </view>
+
+    <!-- 消息滚动区域 -->
     <scroll-view
-      class="no-bounce flex-1"
-      :style="{ paddingTop: `${headerPadTop}px`, paddingBottom: scrollPadBottom }"
+      class="no-bounce chat-scroll"
+      :style="messageListStyle"
       scroll-y
       :scroll-into-view="scrollIntoView"
       scroll-with-animation
+      @scroll="handleScroll"
     >
       <view class="px-10px py-14px">
         <template v-for="it in renderItems" :key="it.id">
@@ -213,7 +261,7 @@ onShow(() => {
       </view>
     </scroll-view>
 
-    <view class="composer fixed bottom-0 left-0 right-0 z-1000" :class="{ focused: inputFocused }" :style="composerStyle">
+    <view class="composer fixed left-0 right-0 z-1000" :class="{ focused: inputFocused }" :style="composerStyle">
       <view class="composer-line" />
       <view class="composer-inner">
         <view class="composer-btn" @click="voiceSim">
@@ -227,6 +275,8 @@ onShow(() => {
             placeholder="消息"
             placeholder-class="text-#b0b0b0"
             confirm-type="send"
+            :adjust-position="false"
+            :cursor-spacing="0"
             @confirm="send"
             @focus="handleFocus"
             @blur="handleBlur"
@@ -253,10 +303,56 @@ onShow(() => {
 
 <style scoped lang="scss">
 .chat-page {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
   background:
     radial-gradient(circle at 20% 10%, rgba(78, 163, 255, 0.16), rgba(0, 0, 0, 0) 55%),
     radial-gradient(circle at 80% 35%, rgba(58, 163, 255, 0.12), rgba(0, 0, 0, 0) 55%),
     linear-gradient(180deg, #15181f 0%, #10131a 100%);
+}
+
+.chat-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pinned-latest {
+  padding: 8px 10px;
+  background: rgba(16, 19, 26, 0.35);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+}
+.pinned-latest-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.18);
+}
+.pinned-latest-inner.incoming {
+  background: rgba(255, 255, 255, 0.92);
+  color: #1e1e1e;
+}
+.pinned-latest-inner.outgoing {
+  background: rgba(132, 215, 85, 0.95);
+  color: #0f1a0f;
+}
+.pinned-latest-label {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.72;
+}
+.pinned-latest-text {
+  flex: 1;
+  font-size: 13px;
+  line-height: 18px;
 }
 
 .header-icon-btn {
@@ -352,7 +448,7 @@ onShow(() => {
   backdrop-filter: blur(14px) saturate(170%);
   -webkit-backdrop-filter: blur(14px) saturate(170%);
   transition:
-    transform 0.22s ease,
+    bottom 0.22s ease,
     background 0.22s ease;
 }
 .composer.focused {
